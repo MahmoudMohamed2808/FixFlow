@@ -1,0 +1,273 @@
+<!-- مخطط قاعدة البيانات الكامل (ERD) لحزمة cmms_full: 19 جدول + جداول Spatie.
+     يُعرض عبر Mermaid — افتح الملف في المتصفح لرؤية الرسم التفاعلي. -->
+<style>
+#erd svg.erDiagram .divider path { stroke-opacity: 0.5; }
+#erd svg.erDiagram .row-rect-odd path,
+#erd svg.erDiagram .row-rect-odd rect,
+#erd svg.erDiagram .row-rect-even path,
+#erd svg.erDiagram .row-rect-even rect { stroke: none !important; }
+</style>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const themeMode = document.documentElement.dataset.mode;
+const dark = themeMode ? themeMode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"anthropic-sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"anthropic-sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const src = `erDiagram
+  DEPARTMENTS ||--o{ LOCATIONS : contains
+  DEPARTMENTS ||--o{ USERS : employs
+  DEPARTMENTS ||--o{ ASSET_CATEGORIES : scopes
+  DEPARTMENTS ||--o{ BUDGETS : allocates
+  LOCATIONS ||--o{ LOCATIONS : nests
+  LOCATIONS ||--o{ ASSETS : houses
+  ASSET_CATEGORIES ||--o{ ASSET_CATEGORIES : nests
+  ASSET_CATEGORIES ||--o{ ASSETS : classifies
+  ASSETS ||--o{ WORK_ORDERS : requires
+  ASSETS ||--o{ PREVENTIVE_SCHEDULES : scheduled
+  ASSETS ||--o{ DOWNTIME_RECORDS : logs
+  USERS ||--o{ ASSETS : creates
+  USERS ||--o{ WORK_ORDERS : reports
+  USERS ||--o{ WORK_ORDERS : assigned
+  CLIENTS ||--o{ WORK_ORDERS : requests
+  WORK_ORDERS ||--o{ WORK_ORDER_PARTS : uses
+  SPARE_PARTS ||--o{ WORK_ORDER_PARTS : consumed
+  SUPPLIERS ||--o{ SPARE_PARTS : supplies
+  PREVENTIVE_SCHEDULES ||--o{ WORK_ORDERS : generates
+  WORK_ORDERS ||--o| DOWNTIME_RECORDS : causes
+  WORK_ORDERS ||--o{ WORK_ORDER_LABOR : logs
+  USERS ||--o{ WORK_ORDER_LABOR : performs
+  WORK_ORDERS ||--o{ WORK_ORDER_COMMENTS : discusses
+  USERS ||--o{ WORK_ORDER_COMMENTS : writes
+  WORK_ORDERS ||--o{ WORK_ORDER_ATTACHMENTS : attaches
+  CLIENTS ||--o{ INVOICES : billed
+  WORK_ORDERS ||--o{ INVOICES : invoiced
+  INVOICES ||--o{ INVOICE_ITEMS : contains
+  USERS ||--o{ ACTIVITY_LOGS : performs
+  ROLES ||--o{ MODEL_HAS_ROLES : grants
+  USERS ||--o{ MODEL_HAS_ROLES : holds
+  ROLES ||--o{ ROLE_HAS_PERMISSIONS : includes
+  PERMISSIONS ||--o{ ROLE_HAS_PERMISSIONS : listed
+
+  DEPARTMENTS {
+    bigint id PK
+    string name
+  }
+  LOCATIONS {
+    bigint id PK
+    string name
+    bigint department_id FK
+    bigint parent_id FK
+  }
+  USERS {
+    bigint id PK
+    string name
+    string email
+    string password
+    bigint department_id FK
+    string phone
+    boolean is_active
+    decimal hourly_rate
+  }
+  ASSET_CATEGORIES {
+    bigint id PK
+    bigint department_id FK
+    string name
+    bigint parent_id FK
+  }
+  SUPPLIERS {
+    bigint id PK
+    string name
+    string phone
+    string email
+    string address
+  }
+  CLIENTS {
+    bigint id PK
+    string name
+    string company_name
+    string phone
+    string email
+    string address
+    text notes
+  }
+  ASSETS {
+    bigint id PK
+    string name
+    string serial_number
+    bigint category_id FK
+    bigint location_id FK
+    date purchase_date
+    date warranty_expiry
+    string status
+    string manufacturer
+    string model
+    string image
+    bigint created_by FK
+  }
+  PREVENTIVE_SCHEDULES {
+    bigint id PK
+    bigint asset_id FK
+    string title
+    string frequency_type
+    int frequency_value
+    date last_generated_date
+    date next_due_date
+    boolean is_active
+  }
+  WORK_ORDERS {
+    bigint id PK
+    string code
+    bigint asset_id FK
+    bigint client_id FK
+    string type
+    string priority
+    string status
+    text description
+    bigint reported_by FK
+    bigint assigned_to FK
+    bigint schedule_id FK
+    datetime scheduled_date
+    datetime started_at
+    datetime completed_at
+    decimal cost
+  }
+  SPARE_PARTS {
+    bigint id PK
+    string name
+    string code
+    string unit
+    int quantity_in_stock
+    int minimum_quantity
+    decimal unit_price
+    bigint supplier_id FK
+  }
+  WORK_ORDER_PARTS {
+    bigint id PK
+    bigint work_order_id FK
+    bigint spare_part_id FK
+    int quantity_used
+    decimal unit_cost
+  }
+  WORK_ORDER_LABOR {
+    bigint id PK
+    bigint work_order_id FK
+    bigint user_id FK
+    decimal hours_spent
+    decimal hourly_rate
+    decimal cost
+  }
+  DOWNTIME_RECORDS {
+    bigint id PK
+    bigint asset_id FK
+    bigint work_order_id FK
+    datetime start_time
+    datetime end_time
+    int duration_minutes
+  }
+  WORK_ORDER_ATTACHMENTS {
+    bigint id PK
+    bigint work_order_id FK
+    string file_path
+  }
+  WORK_ORDER_COMMENTS {
+    bigint id PK
+    bigint work_order_id FK
+    bigint user_id FK
+    text comment
+  }
+  ACTIVITY_LOGS {
+    bigint id PK
+    bigint user_id FK
+    string action
+    string model_type
+    bigint model_id
+  }
+  BUDGETS {
+    bigint id PK
+    string title
+    bigint department_id FK
+    date period_start
+    date period_end
+    decimal allocated_amount
+    text notes
+  }
+  INVOICES {
+    bigint id PK
+    string invoice_number
+    bigint client_id FK
+    bigint work_order_id FK
+    date issue_date
+    date due_date
+    string status
+    decimal subtotal
+    decimal tax
+    decimal total_amount
+    datetime paid_at
+    text notes
+  }
+  INVOICE_ITEMS {
+    bigint id PK
+    bigint invoice_id FK
+    string description
+    decimal quantity
+    decimal unit_price
+    decimal total
+  }
+  ROLES {
+    bigint id PK
+    string name
+    string guard_name
+  }
+  PERMISSIONS {
+    bigint id PK
+    string name
+    string guard_name
+  }
+  MODEL_HAS_ROLES {
+    bigint role_id FK
+    string model_type
+    bigint model_id
+  }
+  ROLE_HAS_PERMISSIONS {
+    bigint permission_id FK
+    bigint role_id FK
+  }`;
+const { svg } = await mermaid.render('erd-svg', src);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg.erDiagram .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg.erDiagram .row-rect-odd path, #erd svg.erDiagram .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
